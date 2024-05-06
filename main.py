@@ -3,9 +3,15 @@ import os
 import discord
 from discord.ext import commands
 
+import random
+import requests
+import json
+
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="h!", intents=intents)
+
+can_roll = True
 
 # on rdy
 @bot.event
@@ -24,6 +30,17 @@ async def on_ready():
 async def test(ctx):
     await ctx.send("test")
     
+@bot.command()
+async def hunt(ctx):
+    random_number = random.randint(1, 20)
+    # add in a low/high rank status (changes probability)
+    res = requests.get(f"https://mhw-db.com/monsters/{random_number}")
+    print(res)
+    response = json.loads(res.text)
+    print(response)
+
+    if can_roll:
+        await ctx.send(f"Name: {response['name']}")
 
 # run bot
 load_dotenv()
