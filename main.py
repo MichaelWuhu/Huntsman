@@ -14,6 +14,8 @@ from MonsterImageScraper import *
 from PIL import Image
 import io
 
+import datetime
+
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="h!", intents=intents)
@@ -59,6 +61,17 @@ async def on_reaction_add(reaction, user):
     if user.bot:
         return
     channel = reaction.message.channel
+    message_creation_time = reaction.message.created_at
+    current_time = datetime.datetime.now(datetime.timezone.utc)
+
+    # only allow reactions to messages created within the last minute 
+    # print(current_time)
+    # print(message_creation_time)
+    # print(current_time - message_creation_time)
+    # print((current_time - message_creation_time).total_seconds())
+    if (current_time - message_creation_time).total_seconds() > 60:
+        return
+
     if reaction.emoji == "👍" and can_hunt:
         await channel.send(f'**{user.display_name}** reacted with {reaction.emoji}')
         if try_hunt(user=user):
@@ -74,9 +87,14 @@ async def on_reaction_add(reaction, user):
 async def send_card(ctx, name, image_url, image_width=200):
     image_data = resize_image(image_url, image_width)
     file = discord.File(io.BytesIO(image_data), filename="image.png")
-    temp_description = (f'💚: {"100"}')
-    embed = discord.Embed(title=name, description=temp_description, color=discord.Color.gold())
+    hunter_hp = (f'💚: {"100"}')
+    monster_hp = (f'❤️: {"100"}')
+    # change_in_hp = (f'💔: {"0"}')
+    embed = discord.Embed(title=name, description="React to Hunt", color=discord.Color.gold())
+    embed.add_field(name="Hunter HP", value=hunter_hp, inline=True)
+    embed.add_field(name="Monster HP", value=monster_hp, inline=True)
     embed.set_image(url="attachment://image.png")
+    # embed.add_field(discord.Button(label="Hunt", style=discord.ButtonStyle.green))
     message = await ctx.send(file=file, embed=embed)
     return message
 
