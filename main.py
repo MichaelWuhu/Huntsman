@@ -9,7 +9,7 @@ import random
 import requests
 import json
 
-from MonsterImageScraper import *
+from MonsterWebScraper import *
 
 from PIL import Image
 import io
@@ -49,10 +49,15 @@ async def hunt(ctx):
     id = random.choice(monsters_by_id)  # change range id to number of monsters in API
     # TODO: add in a low/high rank status (changes probability)
     res = requests.get(f"https://mhw-db.com/monsters/{id}")
-    response = json.loads(res.text)
+    monsters = json.loads(res.text)
+    rank = "low" # later change to below
+    
+    # hunter_rank = getHunterRank(ctx.user)
+    # if hunter_rank >= 
+
 
     if can_roll:
-        message = await send_card(ctx, response["name"], getMonsterImage(response["name"]))
+        message = await send_card(ctx, monsters["name"], rank, getMonsterImage(monsters["name"])) # switch to hunter point system later
         await message.add_reaction("👍")
 
 
@@ -74,8 +79,10 @@ async def on_reaction_add(reaction, user):
 
     if reaction.emoji == "👍" and can_hunt:
         await channel.send(f'**{user.display_name}** reacted with {reaction.emoji}')
+        # can_hunt = False
         if try_hunt(user=user):
             await channel.send(f'**{user.display_name}** successfully hunted the monster!')
+            return
 
 
 #########################################################################
@@ -84,12 +91,12 @@ async def on_reaction_add(reaction, user):
 
 
 # sends the info in a formatted card
-async def send_card(ctx, name, image_url, image_width=200):
+async def send_card(ctx, name, rank, image_url, image_width=200):
     image_data = resize_image(image_url, image_width)
     file = discord.File(io.BytesIO(image_data), filename="image.png")
+    monster_hp_data = getMonsterHP(name, rank)
     hunter_hp = (f'💚: {"100"}')
-    monster_hp = (f'❤️: {"100"}')
-    # change_in_hp = (f'💔: {"0"}')
+    monster_hp = (f'❤️: {monster_hp_data}')
     embed = discord.Embed(title=name, description="React to Hunt", color=discord.Color.gold())
     embed.add_field(name="Hunter HP", value=hunter_hp, inline=True)
     embed.add_field(name="Monster HP", value=monster_hp, inline=True)
