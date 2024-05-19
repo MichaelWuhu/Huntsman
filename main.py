@@ -58,10 +58,10 @@ async def hunt(ctx):
 
     if can_roll:
         message = await send_card(ctx, monsters["name"], rank, getMonsterImage(monsters["name"])) # switch to hunter point system later
-        await message.add_reaction("👍")
+        # await message.add_reaction("👍")
 
 
-@bot.event
+# @bot.event
 async def on_reaction_add(reaction, user):
     if user.bot:
         return
@@ -85,24 +85,55 @@ async def on_reaction_add(reaction, user):
             return
 
 
+async def on_hunt(message, user):
+    if user.bot:
+        return
+
+    channel = message.channel
+    message_creation_time = message.created_at
+    current_time = datetime.datetime.now(datetime.timezone.utc)
+
+    if (current_time - message_creation_time).total_seconds() > 60:
+        return 
+    
+    return try_hunt()
+    
+
+
 #########################################################################
 #### HELPER METHODS ####
 #########################################################################
-
 
 # sends the info in a formatted card
 async def send_card(ctx, name, rank, image_url, image_width=200):
     image_data = resize_image(image_url, image_width)
     file = discord.File(io.BytesIO(image_data), filename="image.png")
+    
     monster_hp_data = getMonsterHP(name, rank)
     hunter_hp = (f'💚: {"100"}')
     monster_hp = (f'❤️: {monster_hp_data}')
+    
     embed = discord.Embed(title=name, description="React to Hunt", color=discord.Color.gold())
     embed.add_field(name="Hunter HP", value=hunter_hp, inline=True)
     embed.add_field(name="Monster HP", value=monster_hp, inline=True)
     embed.set_image(url="attachment://image.png")
-    # embed.add_field(discord.Button(label="Hunt", style=discord.ButtonStyle.green))
-    message = await ctx.send(file=file, embed=embed)
+    
+    hunt_button = discord.ui.Button(label="HUNT", style=discord.ButtonStyle.secondary, emoji="⚔️")
+    view = discord.ui.View(timeout=60)
+    view.add_item(hunt_button)
+
+    async def callback(interaction):
+        await interaction.response.defer()
+        hunted = await on_hunt(interaction.message, interaction.user)
+        if hunted:
+            await interaction.channel.send(f'**{interaction.user.display_name}** hunted the monster 🗡️')
+        else:
+            await interaction.channel.send(f'**{interaction.user.display_name}** pressed button')
+        return
+    
+    hunt_button.callback = callback
+
+    message = await ctx.send(file=file, embed=embed, view=view)
     return message
 
 
@@ -123,8 +154,9 @@ def resize_image(image_url, base_width):
 
 
 # rn its just % chance
-def try_hunt(user):
+def try_hunt():
     random_num = random.randint(1, 100)
+    print(random_num)
     if random_num <= 40: # 40% Chance of success in hunting monster
         return True
     else:
@@ -133,6 +165,8 @@ def try_hunt(user):
 #########################################################################
 #### END HELPER METHODS ####
 #########################################################################
+
+
 
 # run bot
 load_dotenv()
