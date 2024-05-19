@@ -14,7 +14,9 @@ from MonsterWebScraper import *
 from PIL import Image
 import io
 
-import datetime
+import re
+
+# import datetime
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -92,32 +94,60 @@ async def on_hunt(message, user):
     if not can_hunt:
         return False
     
+    # TODO: remove
     # channel = message.channel
     # message_creation_time = message.created_at
     # current_time = datetime.datetime.now(datetime.timezone.utc)
-
     # if (current_time - message_creation_time).total_seconds() > 60:
     #     return 
+
 
 
     # weapon = user.weapon
     # weapons = ['SWORDANDSHIELD', 'GREATSWORD', 'LONGSWORD', 'LANCE', 'BOW']
     weapon = "SWORDANDSHIELD"
+    old_embed = message.embeds[0]
+    
+    # print(old_embed.fields[1])
+    parts = old_embed.fields[1].value.split(':')
+    hunter_hp = int(parts[1].strip())
+    monster_hp = getMonsterHP(message.embeds[0].title, "low") # TODO: change for when hunter attacks
 
-    while can_hunt:
-        old_embed = message.embeds[0]
-        # fields = old_embed.fields
-        embed = create_embed(old_embed.fields[0].name, "temp", old_embed.fields[1].value, old_embed.fields[2].value)
-        await message.edit(embed=embed)
+    monster_dmg = getMonsterHP(old_embed.title, "low") / 100 # TODO: change low to rank argument
+    # TODO: just an IDEA but subtract defense from monster_dmg
+    hunter_move = f"Took {monster_dmg} damage"
+    
         
+    # if weapon == "SWORDANDSHIELD":
+        # snsOptions = ['stun', 'shield', 'dodge']
+        # if random.randint(1, 100) <= 5: # %5 stun chance
+        #     atk_move = random.choice(snsOptions)
+        #     print(atk_move)
         
-        if weapon == "SWORDANDSHIELD":
-            if random.randint(1, 100) <= 5: # %5 stun chance
-                print('temp')
-            return True
+    # universal dmg (no special weapon effects)
+    if random.randint(1, 100) <= 10: # %10 dodge chance
+        print("dodged")
+        hunter_move = "dodged"
+        monster_dmg = 0
 
 
-    return True
+    new_hunter_hp = int(hunter_hp - monster_dmg)
+    if new_hunter_hp < 0:
+        new_hunter_hp = 0
+        # hunter_move = "Hunter fainted"
+        # can_hunt = False # maybe remove
+
+    embed = create_embed(old_embed.title, hunter_move, new_hunter_hp, monster_hp)
+    # embed.set_field_at(2) # monster hp
+
+    await message.edit(embed=embed)
+
+    if monster_hp <= 0:
+        return "hunted"
+    elif new_hunter_hp <= 0:
+        return "fainted"
+    else:
+        return "N/A"
     
 
 
@@ -130,9 +160,8 @@ async def send_card(ctx, monster_name, monster_rank, image_url, image_width=200)
     image_data = resize_image(image_url, image_width)
     file = discord.File(io.BytesIO(image_data), filename="image.png")
     
-    monster_hp_data = getMonsterHP(monster_name, monster_rank)
-    hunter_hp_value = (f'💚: {"100"}')
-    monster_hp_value = (f'❤️: {monster_hp_data}')
+    hunter_hp_value = 100
+    monster_hp_value = getMonsterHP(monster_name, monster_rank)
     
 
     embed = create_embed(monster_name, "React to Hunt", hunter_hp_value, monster_hp_value)
@@ -144,10 +173,11 @@ async def send_card(ctx, monster_name, monster_rank, image_url, image_width=200)
     async def callback(interaction):
         await interaction.response.defer()
         hunted = await on_hunt(interaction.message, interaction.user)
-        if hunted:
+        if hunted == "hunted":
             await interaction.channel.send(f'**{interaction.user.display_name}** hunted the monster 🗡️')
-        else:
-            await interaction.channel.send(f'**{interaction.user.display_name}** pressed button')
+        elif hunted == "fainted":
+            await interaction.channel.send(f'**{interaction.user.display_name}** fainted 💀')
+            # await interaction.channel.send(f'**{interaction.user.display_name}** pressed button') # TODO: maybe just leave blank
         return
     
     hunt_button.callback = callback
@@ -159,8 +189,8 @@ async def send_card(ctx, monster_name, monster_rank, image_url, image_width=200)
 def create_embed(title, status, hunterHP, monsterHP):
     embed = discord.Embed(title=title, color=discord.Color.gold())
     embed.add_field(name="", value=status, inline=False)
-    embed.add_field(name="Hunter HP", value=hunterHP, inline=True)
-    embed.add_field(name="Monster HP", value=monsterHP, inline=True)
+    embed.add_field(name="Hunter HP", value=f'💚: {hunterHP}', inline=True)
+    embed.add_field(name="Monster HP", value=f'❤️: {monsterHP}', inline=True)
     embed.set_image(url="attachment://image.png")
     return embed
 
