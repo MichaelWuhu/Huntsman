@@ -109,20 +109,34 @@ async def on_hunt(message, user):
     old_embed = message.embeds[0]
     
     # print(old_embed.fields[1])
-    parts = old_embed.fields[1].value.split(':')
-    hunter_hp = int(parts[1].strip())
-    monster_hp = getMonsterHP(message.embeds[0].title, "low") # TODO: change for when hunter attacks
+    hunter_hp_parts = old_embed.fields[1].value.split(':')
+    hunter_hp = int(hunter_hp_parts[1].strip())
+
+
+    monster_hp_parts = old_embed.fields[2].value.split(':')
+    monster_hp = int(monster_hp_parts[1].strip())
 
     monster_dmg = getMonsterHP(old_embed.title, "low") / 100 # TODO: change low to rank argument
     # TODO: just an IDEA but subtract defense from monster_dmg
     hunter_move = f"Took {monster_dmg} damage"
     
         
-    # if weapon == "SWORDANDSHIELD":
-        # snsOptions = ['stun', 'shield', 'dodge']
-        # if random.randint(1, 100) <= 5: # %5 stun chance
-        #     atk_move = random.choice(snsOptions)
-        #     print(atk_move)
+    if weapon == "SWORDANDSHIELD":
+        # user_atk_stat = db.getUserAtkStat() # TODO: add in user stat from database
+        weapon_dmg = 500
+        snsOptions = ['stun', 'shield', 'dodge']
+        if random.randint(1, 100) <= 5: # %5 stun chance
+            atk_move = random.choice(snsOptions)
+            print(atk_move)
+            if atk_move == "stun":
+                monster_dmg = 0
+                hunter_move = "Stunned monster"
+            elif atk_move == "shield":
+                monster_dmg /= 2 # TODO: change value to make more sense
+                hunter_move = "Blocked monster attack"
+            elif atk_move == "dodge":
+                monster_dmg = 0
+                hunter_move = "Dodged monster attack"
         
     # universal dmg (no special weapon effects)
     if random.randint(1, 100) <= 10: # %10 dodge chance
@@ -130,19 +144,22 @@ async def on_hunt(message, user):
         hunter_move = "dodged"
         monster_dmg = 0
 
+    
 
     new_hunter_hp = int(hunter_hp - monster_dmg)
+    new_monster_hp = int(monster_hp - weapon_dmg)
+
     if new_hunter_hp < 0:
         new_hunter_hp = 0
-        # hunter_move = "Hunter fainted"
-        # can_hunt = False # maybe remove
+    if new_monster_hp < 0:
+        new_monster_hp = 0
 
-    embed = create_embed(old_embed.title, hunter_move, new_hunter_hp, monster_hp)
+    embed = create_embed(old_embed.title, hunter_move, new_hunter_hp, new_monster_hp)
     # embed.set_field_at(2) # monster hp
 
     await message.edit(embed=embed)
 
-    if monster_hp <= 0:
+    if new_monster_hp <= 0:
         return "hunted"
     elif new_hunter_hp <= 0:
         return "fainted"

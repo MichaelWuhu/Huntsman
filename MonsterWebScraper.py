@@ -22,7 +22,7 @@ def getMonsterHP(monster_name, rank): # rank = low, high, master
         if cols[0].text.strip() == monster_name:
             values = [int(col.text.strip()) if col.text.strip() != 'N/A' else col.text.strip() for col in cols[1:4]]
     
-    print(values)
+    # print(values)
 
     if rank == "low":
         hp = values[0]
