@@ -1,5 +1,6 @@
 import requests  
 from bs4 import BeautifulSoup  
+import pandas as pd
     
 def getdata(url):  
     r = requests.get(url)  
@@ -47,3 +48,44 @@ def getMonsterHP(monster_name, rank): # rank = low, high, master
                 hp = values[0] * 9
     
     return hp
+
+
+def getMonsterElement(monster_name):
+    # Read the CSV file into a pandas DataFrame
+    elementsheet = pd.read_csv('MH Element Sheet.csv')
+
+    # Initialize dictionaries to store monsters for each element
+    element_dict = {
+        'Fire': [],
+        'Water': [],
+        'Thunder': [],
+        'Ice': [],
+        'Dragon': []
+    }
+
+    # Iterate over each column (element) and its corresponding monsters
+    for column in elementsheet.columns:
+        element_monsters = elementsheet[column].dropna().tolist()
+        element_dict[column] = element_monsters
+
+    # Check if the monster exists in any of the element lists
+    for element, monsters in element_dict.items():
+        if monster_name in monsters:
+            return element
+
+    # If the monster is not found, return None
+    print(f"element not found for monster: {monster_name}")
+    return 'Not Found'
+
+def getMonsterElementEmoji(element):
+    
+    element_emojis = {
+        'Fire':'<:fire:1242956619512287403>',
+        'Water':'<:water:1242956617255878758>',
+        'Thunder':'<:thunder:1242956615687209020>',
+        'Ice':'<:ice:1242956614164549682>',
+        'Dragon':'<:dragon:1242956612340023438>',
+        'Non-Elemental':'🦴',
+    }
+
+    return element_emojis[element]

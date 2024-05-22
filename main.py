@@ -9,7 +9,7 @@ import random
 import requests
 import json
 
-from MonsterWebScraper import *
+from MonsterHelperMethods import *
 
 from PIL import Image
 import io
@@ -54,37 +54,12 @@ async def hunt(ctx):
     monsters = json.loads(res.text)
     rank = "low" # later change to below
     
-    # hunter_rank = getHunterRank(ctx.user)
-    # if hunter_rank >= 
-
 
     if can_roll:
-        message = await send_card(ctx, monsters["name"], rank, getMonsterImage(monsters["name"])) # switch to hunter point system later
-        # await message.add_reaction("👍")
-
-# TODO: remove
-# @bot.event
-# async def on_reaction_add(reaction, user):
-#     if user.bot:
-#         return
-#     channel = reaction.message.channel
-#     message_creation_time = reaction.message.created_at
-#     current_time = datetime.datetime.now(datetime.timezone.utc)
-
-#     # only allow reactions to messages created within the last minute 
-#     # print(current_time)
-#     # print(message_creation_time)
-#     # print(current_time - message_creation_time)
-#     # print((current_time - message_creation_time).total_seconds())
-#     if (current_time - message_creation_time).total_seconds() > 60:
-#         return
-
-#     if reaction.emoji == "👍" and can_hunt:
-#         await channel.send(f'**{user.display_name}** reacted with {reaction.emoji}')
-#         # can_hunt = False
-#         if try_hunt(user=user):
-#             await channel.send(f'**{user.display_name}** successfully hunted the monster!')
-#             return
+        await send_card(ctx, monsters["name"], rank, getMonsterImage(monsters["name"])) # switch to hunter point system later
+        monster_name = monsters["name"]
+        element = getMonsterElement(monster_name)
+        print(f"{monster_name}'s element: {element}")
 
 
 async def on_hunt(message, user):
@@ -120,7 +95,7 @@ async def on_hunt(message, user):
     
     if weapon == "SWORDANDSHIELD":
         # user_atk_stat = db.getUserAtkStat() # TODO: add in user stat from database
-        weapon_dmg = 500
+        weapon_dmg = 50000
         hunter_dmg = weapon_dmg # add user atk stat
         snsOptions = ['stun', 'shield', 'dodge']
         if random.randint(1, 100) <= 5: # %5 stun chance
@@ -201,8 +176,16 @@ async def send_card(ctx, monster_name, monster_rank, image_url, image_width=200)
             await interaction.channel.send(f'**{interaction.user.display_name}** hunted the monster 🗡️')
             await interaction.channel.send(f'but...')
             await interaction.channel.send(f'**{interaction.user.display_name}** also fainted 💀')
+            amount_dropped = getMonsterHP(monster_name, monster_rank) // 100
+            element = getMonsterElement(monster_name)
+            element_emoji = getMonsterElementEmoji(element)
+            await interaction.channel.send(f'**{monster_name}** dropped **{amount_dropped} {element} parts** {element_emoji}')
         elif hunted == "hunted":
-            await interaction.channel.send(f'**{interaction.user.display_name}** hunted the monster 🗡️')
+            await interaction.channel.send(f'**{interaction.user.display_name}** hunted the monster 🗡️')  
+            amount_dropped = getMonsterHP(monster_name, monster_rank) // 100
+            element = getMonsterElement(monster_name)
+            element_emoji = getMonsterElementEmoji(element)
+            await interaction.channel.send(f'**{monster_name}** dropped **{amount_dropped} {element} parts** {element_emoji}')
         elif hunted == "fainted":
             await interaction.channel.send(f'**{interaction.user.display_name}** fainted 💀')
             # await interaction.channel.send(f'**{interaction.user.display_name}** pressed button') # TODO: maybe just leave blank
