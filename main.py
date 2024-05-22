@@ -14,8 +14,6 @@ from MonsterHelperMethods import *
 from PIL import Image
 import io
 
-import re
-
 # import datetime
 
 intents = discord.Intents.default()
@@ -65,16 +63,6 @@ async def hunt(ctx):
 async def on_hunt(message, user):
     if user.bot:
         return
-    
-    if not can_hunt:
-        return False
-    
-    # TODO: remove
-    # channel = message.channel
-    # message_creation_time = message.created_at
-    # current_time = datetime.datetime.now(datetime.timezone.utc)
-    # if (current_time - message_creation_time).total_seconds() > 60:
-    #     return 
 
     used_special = False
 
@@ -83,14 +71,20 @@ async def on_hunt(message, user):
     weapon = "SWORDANDSHIELD"
     old_embed = message.embeds[0]
     
-    # print(old_embed.fields[1])
     hunter_hp_parts = old_embed.fields[1].value.split(':')
     hunter_hp = int(hunter_hp_parts[1].strip())
 
     monster_hp_parts = old_embed.fields[2].value.split(':')
     monster_hp = int(monster_hp_parts[1].strip())
 
-    monster_dmg = getMonsterHP(old_embed.title, "low") / 100 # TODO: change low to rank argument
+    if hunter_hp == 0 or monster_hp == 0:
+        print("can't hunt")
+        return False
+
+    monster_pot_dmg_low = (getMonsterHP(old_embed.title, "low") // 1000) * 10 # TODO: change low to rank argument
+    monster_pot_dmg_high = ((getMonsterHP(old_embed.title, "low") // 1000) + 1) * 10 # TODO: change low to rank argument
+    monster_dmg = random.randint(monster_pot_dmg_low, monster_pot_dmg_high)
+    print(f"monster dmg = {monster_dmg}")
     hunter_move = f"Took {monster_dmg} damage from monster" # TODO: just an IDEA but subtract defense from monster_dmg
     
     if weapon == "SWORDANDSHIELD":
@@ -173,19 +167,22 @@ async def send_card(ctx, monster_name, monster_rank, image_url, image_width=200)
         await interaction.response.defer()
         hunted = await on_hunt(interaction.message, interaction.user)
         if hunted == "hunted and fainted":
-            await interaction.channel.send(f'**{interaction.user.display_name}** hunted the monster 🗡️')
-            await interaction.channel.send(f'but...')
+            await interaction.channel.send(f'**{interaction.user.display_name}** hunted the monster 🗡️ but...')
             await interaction.channel.send(f'**{interaction.user.display_name}** also fainted 💀')
-            amount_dropped = getMonsterHP(monster_name, monster_rank) // 100
+            amount_dropped_low = (getMonsterHP(monster_name, monster_rank) // 1000) * 10
+            amount_dropped_high = ((getMonsterHP(monster_name, monster_rank) // 1000) + 1) * 10
+            amount_dropped = random.randint(amount_dropped_low, amount_dropped_high)
             element = getMonsterElement(monster_name)
             element_emoji = getMonsterElementEmoji(element)
-            await interaction.channel.send(f'**{monster_name}** dropped **{amount_dropped} {element} parts** {element_emoji}')
+            await interaction.channel.send(f'**{monster_name}** dropped {element_emoji} **{amount_dropped} {element} parts** {element_emoji}')
         elif hunted == "hunted":
             await interaction.channel.send(f'**{interaction.user.display_name}** hunted the monster 🗡️')  
-            amount_dropped = getMonsterHP(monster_name, monster_rank) // 100
+            amount_dropped_low = (getMonsterHP(monster_name, monster_rank) // 1000) * 10
+            amount_dropped_high = ((getMonsterHP(monster_name, monster_rank) // 1000) + 1) * 10
+            amount_dropped = random.randint(amount_dropped_low, amount_dropped_high)
             element = getMonsterElement(monster_name)
             element_emoji = getMonsterElementEmoji(element)
-            await interaction.channel.send(f'**{monster_name}** dropped **{amount_dropped} {element} parts** {element_emoji}')
+            await interaction.channel.send(f'**{monster_name}** dropped {element_emoji} **{amount_dropped} {element} parts** {element_emoji}')
         elif hunted == "fainted":
             await interaction.channel.send(f'**{interaction.user.display_name}** fainted 💀')
             # await interaction.channel.send(f'**{interaction.user.display_name}** pressed button') # TODO: maybe just leave blank
