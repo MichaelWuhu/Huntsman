@@ -101,7 +101,7 @@ async def on_hunt(message, user):
     # if (current_time - message_creation_time).total_seconds() > 60:
     #     return 
 
-
+    used_special = False
 
     # weapon = user.weapon
     # weapons = ['SWORDANDSHIELD', 'GREATSWORD', 'LONGSWORD', 'LANCE', 'BOW']
@@ -112,42 +112,47 @@ async def on_hunt(message, user):
     hunter_hp_parts = old_embed.fields[1].value.split(':')
     hunter_hp = int(hunter_hp_parts[1].strip())
 
-
     monster_hp_parts = old_embed.fields[2].value.split(':')
     monster_hp = int(monster_hp_parts[1].strip())
 
     monster_dmg = getMonsterHP(old_embed.title, "low") / 100 # TODO: change low to rank argument
-    # TODO: just an IDEA but subtract defense from monster_dmg
-    hunter_move = f"Took {monster_dmg} damage"
+    hunter_move = f"Took {monster_dmg} damage from monster" # TODO: just an IDEA but subtract defense from monster_dmg
     
-        
     if weapon == "SWORDANDSHIELD":
         # user_atk_stat = db.getUserAtkStat() # TODO: add in user stat from database
         weapon_dmg = 500
+        hunter_dmg = weapon_dmg # add user atk stat
         snsOptions = ['stun', 'shield', 'dodge']
         if random.randint(1, 100) <= 5: # %5 stun chance
+            used_special = True
+            hunter_move = f"Dealt {hunter_dmg} damage to monster"
             atk_move = random.choice(snsOptions)
             print(atk_move)
             if atk_move == "stun":
                 monster_dmg = 0
-                hunter_move = "Stunned monster"
+                hunter_move += "\n& stunned monster"
             elif atk_move == "shield":
                 monster_dmg /= 2 # TODO: change value to make more sense
-                hunter_move = "Blocked monster attack"
+                hunter_move += "\n& blocked monster attack"
             elif atk_move == "dodge":
                 monster_dmg = 0
-                hunter_move = "Dodged monster attack"
+                hunter_move += "\n& dodged monster attack"
         
-    # universal dmg (no special weapon effects)
-    if random.randint(1, 100) <= 10: # %10 dodge chance
-        print("dodged")
-        hunter_move = "dodged"
-        monster_dmg = 0
 
-    
+
+
+    # universal dmg (no special weapon effects)
+    if not used_special:
+        if random.randint(1, 100) <= 10: # %10 dodge chance
+            hunter_move = f"Dealt {hunter_dmg} damage to monster"
+            print("dodged via global 10%")
+            hunter_move += "\n& dodged monster attack"
+            monster_dmg = 0
+        else:
+            hunter_move += f"\n& dealt {hunter_dmg} damage to monster"
 
     new_hunter_hp = int(hunter_hp - monster_dmg)
-    new_monster_hp = int(monster_hp - weapon_dmg)
+    new_monster_hp = int(monster_hp - hunter_dmg)
 
     if new_hunter_hp < 0:
         new_hunter_hp = 0
@@ -159,7 +164,9 @@ async def on_hunt(message, user):
 
     await message.edit(embed=embed)
 
-    if new_monster_hp <= 0:
+    if new_monster_hp <= 0 and new_hunter_hp <= 0:
+        return "hunted and fainted"
+    elif new_monster_hp <= 0:
         return "hunted"
     elif new_hunter_hp <= 0:
         return "fainted"
@@ -190,7 +197,11 @@ async def send_card(ctx, monster_name, monster_rank, image_url, image_width=200)
     async def callback(interaction):
         await interaction.response.defer()
         hunted = await on_hunt(interaction.message, interaction.user)
-        if hunted == "hunted":
+        if hunted == "hunted and fainted":
+            await interaction.channel.send(f'**{interaction.user.display_name}** hunted the monster 🗡️')
+            await interaction.channel.send(f'but...')
+            await interaction.channel.send(f'**{interaction.user.display_name}** also fainted 💀')
+        elif hunted == "hunted":
             await interaction.channel.send(f'**{interaction.user.display_name}** hunted the monster 🗡️')
         elif hunted == "fainted":
             await interaction.channel.send(f'**{interaction.user.display_name}** fainted 💀')
