@@ -66,13 +66,15 @@ async def on_hunt(message, user):
 
     # weapon = user.weapon
     # weapons = ['SWORDANDSHIELD', 'GREATSWORD', 'LONGSWORD', 'LANCE', 'BOW']
-    weapon = "GREATSWORD"
+    weapon = "LONGSWORD"
     old_embed = message.embeds[0]
 
     turn = int(old_embed.footer.text.split(' ')[1])
     print(turn)
 
     used_special = False
+
+    prev_status = old_embed.fields[0].value
     
     hunter_hp_parts = old_embed.fields[1].value.split(':')
     hunter_hp = int(hunter_hp_parts[1].strip())
@@ -112,20 +114,31 @@ async def on_hunt(message, user):
     
     if weapon == "GREATSWORD":
         # user_atk_stat = db.getUserAtkStat() # TODO: add in user stat from database
-        weapon_dmg = 300 # TODO: adjust dmg
+        weapon_dmg = 1000 # TODO: adjust dmg
         hunter_dmg = weapon_dmg # add user atk stat
-        used_special = True
-        if turn % 2 == 1: # every 2nd turn
+        if turn % 2 == 1: # every other turn
             hunter_dmg = 0
             hunter_move += "\nCharging up"
+        elif turn % 3 == 0: # every 3rd turn
+            hunter_dmg *= 2
+            hunter_move += f"\nTrue charged slash did {hunter_dmg} damage to monster"
         else:
-            if turn % 3 == 0: # every 3rd turn
-                hunter_dmg *= 2
-                hunter_move += f"\nTrue charged slash did {hunter_dmg} damage to monster"
-            else:
-                hunter_move += f"\nDealt {hunter_dmg} damage to monster"
-        
+            hunter_move += f"\nDealt {hunter_dmg} damage to monster"
 
+    if weapon == "LONGSWORD":
+        # user_atk_stat = db.getUserAtkStat() # TODO: add in user stat from database
+        weapon_dmg = 800 # TODO: adjust dmg
+        hunter_dmg = weapon_dmg # add user atk stat
+
+        if "Parried" in prev_status:
+            hunter_dmg = int(hunter_dmg * 1.5)
+            hunter_move += f"\nParry follow-up did {hunter_dmg} damage to monster"
+            used_special = True
+        elif random.randint(1, 100) <= 50: # 5% parry chance
+                monster_dmg = 0
+                hunter_move = "Parried monster attack"
+                used_special = True
+           
 
     # universal dmg (no special weapon effects)
     if not used_special:
