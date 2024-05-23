@@ -64,12 +64,15 @@ async def on_hunt(message, user):
     if user.bot:
         return
 
-    used_special = False
-
     # weapon = user.weapon
     # weapons = ['SWORDANDSHIELD', 'GREATSWORD', 'LONGSWORD', 'LANCE', 'BOW']
-    weapon = "SWORDANDSHIELD"
+    weapon = "GREATSWORD"
     old_embed = message.embeds[0]
+
+    turn = int(old_embed.footer.text.split(' ')[1])
+    print(turn)
+
+    used_special = False
     
     hunter_hp_parts = old_embed.fields[1].value.split(':')
     hunter_hp = int(hunter_hp_parts[1].strip())
@@ -84,12 +87,12 @@ async def on_hunt(message, user):
     monster_pot_dmg_low = (getMonsterHP(old_embed.title, "low") // 1000) * 10 # TODO: change low to rank argument
     monster_pot_dmg_high = ((getMonsterHP(old_embed.title, "low") // 1000) + 1) * 10 # TODO: change low to rank argument
     monster_dmg = random.randint(monster_pot_dmg_low, monster_pot_dmg_high)
-    print(f"monster dmg = {monster_dmg}")
+    # print(f"monster dmg = {monster_dh!mg}")
     hunter_move = f"Took {monster_dmg} damage from monster" # TODO: just an IDEA but subtract defense from monster_dmg
     
     if weapon == "SWORDANDSHIELD":
         # user_atk_stat = db.getUserAtkStat() # TODO: add in user stat from database
-        weapon_dmg = 50000
+        weapon_dmg = 50000 # TODO: adjust dmg
         hunter_dmg = weapon_dmg # add user atk stat
         snsOptions = ['stun', 'shield', 'dodge']
         if random.randint(1, 100) <= 5: # %5 stun chance
@@ -106,8 +109,22 @@ async def on_hunt(message, user):
             elif atk_move == "dodge":
                 monster_dmg = 0
                 hunter_move += "\n& dodged monster attack"
+    
+    if weapon == "GREATSWORD":
+        # user_atk_stat = db.getUserAtkStat() # TODO: add in user stat from database
+        weapon_dmg = 300 # TODO: adjust dmg
+        hunter_dmg = weapon_dmg # add user atk stat
+        used_special = True
+        if turn % 2 == 1: # every 2nd turn
+            hunter_dmg = 0
+            hunter_move += "\nCharging up"
+        else:
+            if turn % 3 == 0: # every 3rd turn
+                hunter_dmg *= 2
+                hunter_move += f"\nTrue charged slash did {hunter_dmg} damage to monster"
+            else:
+                hunter_move += f"\nDealt {hunter_dmg} damage to monster"
         
-
 
 
     # universal dmg (no special weapon effects)
@@ -127,8 +144,9 @@ async def on_hunt(message, user):
         new_hunter_hp = 0
     if new_monster_hp < 0:
         new_monster_hp = 0
-
-    embed = create_embed(old_embed.title, hunter_move, new_hunter_hp, new_monster_hp)
+    
+    turn += 1
+    embed = create_embed(old_embed.title, hunter_move, new_hunter_hp, new_monster_hp, turn)
     # embed.set_field_at(2) # monster hp
 
     await message.edit(embed=embed)
@@ -194,12 +212,13 @@ async def send_card(ctx, monster_name, monster_rank, image_url, image_width=200)
     return message
 
 # create embed
-def create_embed(title, status, hunterHP, monsterHP):
+def create_embed(title, status, hunterHP, monsterHP, turn=1):
     embed = discord.Embed(title=title, color=discord.Color.gold())
     embed.add_field(name="", value=status, inline=False)
     embed.add_field(name="Hunter HP", value=f'💚: {hunterHP}', inline=True)
     embed.add_field(name="Monster HP", value=f'❤️: {monsterHP}', inline=True)
     embed.set_image(url="attachment://image.png")
+    embed.set_footer(text=f"Turn {turn}")
     return embed
 
 
