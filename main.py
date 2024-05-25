@@ -66,7 +66,7 @@ async def on_hunt(message, user):
 
     # weapon = user.weapon
     # weapons = ['SWORDANDSHIELD', 'GREATSWORD', 'LONGSWORD', 'LANCE', 'BOW']
-    weapon = "GREATSWORD"
+    weapon = "LANCE"
     old_embed = message.embeds[0]
 
     turn = int(old_embed.footer.text.split(' ')[1])
@@ -90,11 +90,15 @@ async def on_hunt(message, user):
     monster_pot_dmg_high = ((getMonsterHP(old_embed.title, "low") // 1000) + 1) * 10 # TODO: change low to rank argument
     monster_dmg = random.randint(monster_pot_dmg_low, monster_pot_dmg_high)
     # print(f"monster dmg = {monster_dh!mg}")
+
+    dodge_chance = 10
+
     hunter_move = f"Took {monster_dmg} damage from monster" # TODO: just an IDEA but subtract defense from monster_dmg
+
     
     if weapon == "SWORDANDSHIELD":
         # user_atk_stat = db.getUserAtkStat() # TODO: add in user stat from database
-        weapon_dmg = 50000 # TODO: adjust dmg
+        weapon_dmg = 500 # TODO: adjust dmg
         hunter_dmg = weapon_dmg # add user atk stat
         snsOptions = ['stun', 'shield', 'dodge']
         if random.randint(1, 100) <= 5: # %5 stun chance
@@ -141,12 +145,23 @@ async def on_hunt(message, user):
             hunter_move = "Parried monster attack"
             used_special = True
            
+    if weapon == "LANCE":
+        # user_atk_stat = db.getUserAtkStat() # TODO: add in user stat from database
+        weapon_dmg = 500 # TODO: adjust dmg
+        hunter_dmg = weapon_dmg # add user atk stat
+
+        if random.randint(1, 100) <= 35: # %35 dmg reduction chance
+            monster_dmg = int(monster_dmg * 0.75) # 75% dmg reduction
+            hunter_move = f"Took reduced damage from monster"
+            hunter_move += f"\nMonster did {monster_dmg} damage"
+            used_special = True
+
 
     # universal dmg (no special weapon effects)
     if not used_special:
-        if random.randint(1, 100) <= 10: # %10 dodge chance
+        if random.randint(1, 100) <= dodge_chance: # %10 dodge chance
             hunter_move = f"Dealt {hunter_dmg} damage to monster"
-            print("dodged via global 10%")
+            print("dodged via global dodge chance")
             hunter_move += "\n& dodged monster attack"
             monster_dmg = 0
         else:
