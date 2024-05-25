@@ -9,12 +9,12 @@ import random
 import requests
 import json
 
-from MonsterWebScraper import *
+from MonsterHelperMethods import *
 
 from PIL import Image
 import io
 
-import datetime
+# import datetime
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -52,51 +52,171 @@ async def hunt(ctx):
     monsters = json.loads(res.text)
     rank = "low" # later change to below
     
-    # hunter_rank = getHunterRank(ctx.user)
-    # if hunter_rank >= 
-
 
     if can_roll:
-        message = await send_card(ctx, monsters["name"], rank, getMonsterImage(monsters["name"])) # switch to hunter point system later
-        # await message.add_reaction("👍")
-
-
-# @bot.event
-async def on_reaction_add(reaction, user):
-    if user.bot:
-        return
-    channel = reaction.message.channel
-    message_creation_time = reaction.message.created_at
-    current_time = datetime.datetime.now(datetime.timezone.utc)
-
-    # only allow reactions to messages created within the last minute 
-    # print(current_time)
-    # print(message_creation_time)
-    # print(current_time - message_creation_time)
-    # print((current_time - message_creation_time).total_seconds())
-    if (current_time - message_creation_time).total_seconds() > 60:
-        return
-
-    if reaction.emoji == "👍" and can_hunt:
-        await channel.send(f'**{user.display_name}** reacted with {reaction.emoji}')
-        # can_hunt = False
-        if try_hunt(user=user):
-            await channel.send(f'**{user.display_name}** successfully hunted the monster!')
-            return
+        await send_card(ctx, monsters["name"], rank, getMonsterImage(monsters["name"])) # switch to hunter point system later
+        monster_name = monsters["name"]
+        element = getMonsterElement(monster_name)
+        print(f"{monster_name}'s element: {element}")
 
 
 async def on_hunt(message, user):
     if user.bot:
         return
 
-    channel = message.channel
-    message_creation_time = message.created_at
-    current_time = datetime.datetime.now(datetime.timezone.utc)
+    # weapon = user.weapon
+    # weapons = ['SWORDANDSHIELD', 'GREATSWORD', 'LONGSWORD', 'LANCE', 'BOW']
+    weapon = "BOW"
+    old_embed = message.embeds[0]
 
-    if (current_time - message_creation_time).total_seconds() > 60:
-        return 
+    turn = int(old_embed.footer.text.split(' ')[1])
+    print(turn)
+
+    used_special = False
+
+    prev_status = old_embed.fields[0].value
     
-    return try_hunt()
+    hunter_hp_parts = old_embed.fields[1].value.split(':')
+    hunter_hp = int(hunter_hp_parts[1].strip())
+
+    monster_hp_parts = old_embed.fields[2].value.split(':')
+    monster_hp = int(monster_hp_parts[1].strip())
+
+    if hunter_hp == 0 or monster_hp == 0:
+        print("can't hunt")
+        return False
+
+    monster_pot_dmg_low = (getMonsterHP(old_embed.title, "low") // 1000) * 10 # TODO: change low to rank argument
+    monster_pot_dmg_high = ((getMonsterHP(old_embed.title, "low") // 1000) + 1) * 10 # TODO: change low to rank argument
+    monster_dmg = random.randint(monster_pot_dmg_low, monster_pot_dmg_high)
+    # print(f"monster dmg = {monster_dh!mg}")
+
+    dodge_chance = 10
+
+    hunter_move = f"Took {monster_dmg} damage from monster" # TODO: just an IDEA but subtract defense from monster_dmg
+
+    
+    if weapon == "SWORDANDSHIELD":
+        # user_atk_stat = db.getUserAtkStat() # TODO: add in user stat from database
+        weapon_dmg = 500 # TODO: adjust dmg
+        hunter_dmg = weapon_dmg # add user atk stat
+        snsOptions = ['stun', 'shield', 'dodge']
+        
+        if random.randint(1, 100) <= 5: # %5 stun chance
+            used_special = True
+            hunter_move = f"Dealt {hunter_dmg} damage to monster"
+            atk_move = random.choice(snsOptions)
+            print(atk_move)
+            if atk_move == "stun":
+                monster_dmg = 0
+                hunter_move += "\n& stunned monster"
+            elif atk_move == "shield":
+                monster_dmg /= 2 # TODO: change value to make more sense
+                hunter_move += "\n& blocked monster attack"
+            elif atk_move == "dodge":
+                monster_dmg = 0
+                hunter_move += "\n& dodged monster attack"
+    
+    if weapon == "GREATSWORD":
+        # user_atk_stat = db.getUserAtkStat() # TODO: add in user stat from database
+        weapon_dmg = 1000 # TODO: adjust dmg
+        hunter_dmg = weapon_dmg # add user atk stat
+        used_special = True
+
+        if turn % 2 == 1: # every other turn
+            hunter_dmg = 0
+            hunter_move += "\nCharging up"
+        elif turn % 3 == 0: # every 3rd turn
+            hunter_dmg *= 2
+            hunter_move += f"\nTrue charged slash did {hunter_dmg} damage to monster"
+        else:
+            hunter_move += f"\nDealt {hunter_dmg} damage to monster"
+
+    if weapon == "LONGSWORD":
+        # user_atk_stat = db.getUserAtkStat() # TODO: add in user stat from database
+        weapon_dmg = 800 # TODO: adjust dmg
+        hunter_dmg = weapon_dmg # add user atk stat
+
+        if "Parried" in prev_status:
+            hunter_dmg = int(hunter_dmg * 1.5)
+            hunter_move += f"\nParry follow-up did {hunter_dmg} damage to monster"
+            used_special = True
+        elif random.randint(1, 100) <= 50: # 5% parry chance
+            monster_dmg = 0
+            hunter_dmg = 0
+            hunter_move = "Parried monster attack"
+            used_special = True
+           
+    if weapon == "LANCE":
+        # user_atk_stat = db.getUserAtkStat() # TODO: add in user stat from database
+        weapon_dmg = 500 # TODO: adjust dmg
+        hunter_dmg = weapon_dmg # add user atk stat
+
+        if random.randint(1, 100) <= 35: # %35 dmg reduction chance
+            monster_dmg = int(monster_dmg * 0.75) # 75% dmg reduction
+            hunter_move = f"Took reduced damage from monster"
+            hunter_move += f"\nMonster did {monster_dmg} damage"
+            used_special = True
+
+
+    if weapon == "BOW":
+        # user_atk_stat = db.getUserAtkStat() # TODO: add in user stat from database
+        weapon_dmg = 500 # TODO: adjust dmg
+        hunter_dmg = weapon_dmg # add user atk stat
+        dodge_chance = 15 # 15% dodge chance
+        used_special = True
+        
+        if random.randint(1, 100) <= dodge_chance: # still give bow chance to dodge
+                hunter_move = f"Dodged monster attack"
+                monster_dmg = 0
+
+        if random.randint(1, 100) <= 15: # %15 chance to miss
+            hunter_dmg = 0
+            hunter_move += f"\nand missed attack"
+        elif "charge 1" in prev_status:
+            hunter_dmg = int(hunter_dmg * 1.10)
+            hunter_move += f"\nBow dealt {hunter_dmg} damage to monster with charge 2"
+        elif "charge 2" in prev_status:
+            hunter_dmg = int(hunter_dmg * 1.25)
+            hunter_move += f"\nBow dealt {hunter_dmg} damage to monster with charge 3"    
+        else:
+            hunter_move += f"\nBow dealt {hunter_dmg} damage to monster with charge 1"
+   
+    
+
+
+    # universal dmg (no special weapon effects)
+    if not used_special:
+        if random.randint(1, 100) <= dodge_chance: # %10 dodge chance
+            hunter_move = f"Dealt {hunter_dmg} damage to monster"
+            print("dodged via global dodge chance")
+            hunter_move += "\n& dodged monster attack"
+            monster_dmg = 0
+        else:
+            hunter_move += f"\n& dealt {hunter_dmg} damage to monster"
+
+    new_hunter_hp = int(hunter_hp - monster_dmg)
+    new_monster_hp = int(monster_hp - hunter_dmg)
+
+    if new_hunter_hp < 0:
+        new_hunter_hp = 0
+    if new_monster_hp < 0:
+        new_monster_hp = 0
+    
+    turn += 1
+    embed = create_embed(old_embed.title, hunter_move, new_hunter_hp, new_monster_hp, turn)
+    # embed.set_field_at(2) # monster hp
+
+    await message.edit(embed=embed)
+
+    if new_monster_hp <= 0 and new_hunter_hp <= 0:
+        return "hunted and fainted"
+    elif new_monster_hp <= 0:
+        return "hunted"
+    elif new_hunter_hp <= 0:
+        return "fainted"
+    else:
+        return "N/A"
     
 
 
@@ -105,18 +225,15 @@ async def on_hunt(message, user):
 #########################################################################
 
 # sends the info in a formatted card
-async def send_card(ctx, name, rank, image_url, image_width=200):
+async def send_card(ctx, monster_name, monster_rank, image_url, image_width=200):
     image_data = resize_image(image_url, image_width)
     file = discord.File(io.BytesIO(image_data), filename="image.png")
     
-    monster_hp_data = getMonsterHP(name, rank)
-    hunter_hp = (f'💚: {"100"}')
-    monster_hp = (f'❤️: {monster_hp_data}')
+    hunter_hp_value = 100
+    monster_hp_value = getMonsterHP(monster_name, monster_rank)
     
-    embed = discord.Embed(title=name, description="React to Hunt", color=discord.Color.gold())
-    embed.add_field(name="Hunter HP", value=hunter_hp, inline=True)
-    embed.add_field(name="Monster HP", value=monster_hp, inline=True)
-    embed.set_image(url="attachment://image.png")
+
+    embed = create_embed(monster_name, "React to Hunt", hunter_hp_value, monster_hp_value)
     
     hunt_button = discord.ui.Button(label="HUNT", style=discord.ButtonStyle.secondary, emoji="⚔️")
     view = discord.ui.View(timeout=60)
@@ -125,16 +242,42 @@ async def send_card(ctx, name, rank, image_url, image_width=200):
     async def callback(interaction):
         await interaction.response.defer()
         hunted = await on_hunt(interaction.message, interaction.user)
-        if hunted:
-            await interaction.channel.send(f'**{interaction.user.display_name}** hunted the monster 🗡️')
-        else:
-            await interaction.channel.send(f'**{interaction.user.display_name}** pressed button')
+        if hunted == "hunted and fainted":
+            await interaction.channel.send(f'**{interaction.user.display_name}** hunted the monster 🗡️ but...')
+            await interaction.channel.send(f'**{interaction.user.display_name}** also fainted 💀')
+            amount_dropped_low = (getMonsterHP(monster_name, monster_rank) // 1000) * 10
+            amount_dropped_high = ((getMonsterHP(monster_name, monster_rank) // 1000) + 1) * 10
+            amount_dropped = random.randint(amount_dropped_low, amount_dropped_high)
+            element = getMonsterElement(monster_name)
+            element_emoji = getMonsterElementEmoji(element)
+            await interaction.channel.send(f'**{monster_name}** dropped {element_emoji} **{amount_dropped} {element} parts** {element_emoji}')
+        elif hunted == "hunted":
+            await interaction.channel.send(f'**{interaction.user.display_name}** hunted the monster 🗡️')  
+            amount_dropped_low = (getMonsterHP(monster_name, monster_rank) // 1000) * 10
+            amount_dropped_high = ((getMonsterHP(monster_name, monster_rank) // 1000) + 1) * 10
+            amount_dropped = random.randint(amount_dropped_low, amount_dropped_high)
+            element = getMonsterElement(monster_name)
+            element_emoji = getMonsterElementEmoji(element)
+            await interaction.channel.send(f'**{monster_name}** dropped {element_emoji} **{amount_dropped} {element} parts** {element_emoji}')
+        elif hunted == "fainted":
+            await interaction.channel.send(f'**{interaction.user.display_name}** fainted 💀')
+            # await interaction.channel.send(f'**{interaction.user.display_name}** pressed button') # TODO: maybe just leave blank
         return
     
     hunt_button.callback = callback
 
     message = await ctx.send(file=file, embed=embed, view=view)
     return message
+
+# create embed
+def create_embed(title, status, hunterHP, monsterHP, turn=1):
+    embed = discord.Embed(title=title, color=discord.Color.gold())
+    embed.add_field(name="", value=status, inline=False)
+    embed.add_field(name="Hunter HP", value=f'💚: {hunterHP}', inline=True)
+    embed.add_field(name="Monster HP", value=f'❤️: {monsterHP}', inline=True)
+    embed.set_image(url="attachment://image.png")
+    embed.set_footer(text=f"Turn {turn}")
+    return embed
 
 
 # resizes an image for consistent width
@@ -153,14 +296,16 @@ def resize_image(image_url, base_width):
     return img_byte_arr
 
 
+
+# TODO: remove this and make it 100% chance of hunting monster
 # rn its just % chance
-def try_hunt():
-    random_num = random.randint(1, 100)
-    print(random_num)
-    if random_num <= 40: # 40% Chance of success in hunting monster
-        return True
-    else:
-        return False
+# def try_hunt():
+#     random_num = random.randint(1, 100)
+#     print(random_num)
+#     if random_num <= 40: # 40% Chance of success in hunting monster
+#         return True
+#     else:
+#         return False
 
 #########################################################################
 #### END HELPER METHODS ####
