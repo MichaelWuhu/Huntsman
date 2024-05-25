@@ -66,7 +66,7 @@ async def on_hunt(message, user):
 
     # weapon = user.weapon
     # weapons = ['SWORDANDSHIELD', 'GREATSWORD', 'LONGSWORD', 'LANCE', 'BOW']
-    weapon = "LANCE"
+    weapon = "BOW"
     old_embed = message.embeds[0]
 
     turn = int(old_embed.footer.text.split(' ')[1])
@@ -101,6 +101,7 @@ async def on_hunt(message, user):
         weapon_dmg = 500 # TODO: adjust dmg
         hunter_dmg = weapon_dmg # add user atk stat
         snsOptions = ['stun', 'shield', 'dodge']
+        
         if random.randint(1, 100) <= 5: # %5 stun chance
             used_special = True
             hunter_move = f"Dealt {hunter_dmg} damage to monster"
@@ -121,6 +122,7 @@ async def on_hunt(message, user):
         weapon_dmg = 1000 # TODO: adjust dmg
         hunter_dmg = weapon_dmg # add user atk stat
         used_special = True
+
         if turn % 2 == 1: # every other turn
             hunter_dmg = 0
             hunter_move += "\nCharging up"
@@ -155,6 +157,32 @@ async def on_hunt(message, user):
             hunter_move = f"Took reduced damage from monster"
             hunter_move += f"\nMonster did {monster_dmg} damage"
             used_special = True
+
+
+    if weapon == "BOW":
+        # user_atk_stat = db.getUserAtkStat() # TODO: add in user stat from database
+        weapon_dmg = 500 # TODO: adjust dmg
+        hunter_dmg = weapon_dmg # add user atk stat
+        dodge_chance = 15 # 15% dodge chance
+        used_special = True
+        
+        if random.randint(1, 100) <= dodge_chance: # still give bow chance to dodge
+                hunter_move = f"Dodged monster attack"
+                monster_dmg = 0
+
+        if random.randint(1, 100) <= 15: # %15 chance to miss
+            hunter_dmg = 0
+            hunter_move += f"\nand missed attack"
+        elif "charge 1" in prev_status:
+            hunter_dmg = int(hunter_dmg * 1.10)
+            hunter_move += f"\nBow dealt {hunter_dmg} damage to monster with charge 2"
+        elif "charge 2" in prev_status:
+            hunter_dmg = int(hunter_dmg * 1.25)
+            hunter_move += f"\nBow dealt {hunter_dmg} damage to monster with charge 3"    
+        else:
+            hunter_move += f"\nBow dealt {hunter_dmg} damage to monster with charge 1"
+   
+    
 
 
     # universal dmg (no special weapon effects)
