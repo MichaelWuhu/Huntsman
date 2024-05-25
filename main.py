@@ -66,7 +66,7 @@ async def on_hunt(message, user):
 
     # weapon = user.weapon
     # weapons = ['SWORDANDSHIELD', 'GREATSWORD', 'LONGSWORD', 'LANCE', 'BOW']
-    weapon = "LONGSWORD"
+    weapon = "GREATSWORD"
     old_embed = message.embeds[0]
 
     turn = int(old_embed.footer.text.split(' ')[1])
@@ -116,6 +116,7 @@ async def on_hunt(message, user):
         # user_atk_stat = db.getUserAtkStat() # TODO: add in user stat from database
         weapon_dmg = 1000 # TODO: adjust dmg
         hunter_dmg = weapon_dmg # add user atk stat
+        used_special = True
         if turn % 2 == 1: # every other turn
             hunter_dmg = 0
             hunter_move += "\nCharging up"
@@ -135,9 +136,10 @@ async def on_hunt(message, user):
             hunter_move += f"\nParry follow-up did {hunter_dmg} damage to monster"
             used_special = True
         elif random.randint(1, 100) <= 50: # 5% parry chance
-                monster_dmg = 0
-                hunter_move = "Parried monster attack"
-                used_special = True
+            monster_dmg = 0
+            hunter_dmg = 0
+            hunter_move = "Parried monster attack"
+            used_special = True
            
 
     # universal dmg (no special weapon effects)
