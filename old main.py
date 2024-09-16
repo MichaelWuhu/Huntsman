@@ -38,10 +38,7 @@ async def on_ready():
     print("Bot is in " + str(guild_count) + " servers")
 
 
-# test command
-@bot.command()
-async def test(ctx):
-    await ctx.send("test")
+
 
 
 @bot.command()
