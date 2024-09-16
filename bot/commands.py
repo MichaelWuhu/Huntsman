@@ -36,7 +36,7 @@ def setup_commands(bot):
             embed = discord.Embed(title="Monster Name", color=discord.Color.gold())
             embed.add_field(name="", value="React to Hunt", inline=False)
             embed.add_field(name="Hunter HP", value=f'💚: {100}', inline=True)
-            embed.add_field(name="Monster HP", value=f'❤️: {2000}', inline=True)
+            embed.add_field(name="Monster HP", value=f'❤️: {2100}', inline=True)
             embed.set_image(url="attachment://image.png")
             embed.set_footer(text=f"Turn {1}")
 

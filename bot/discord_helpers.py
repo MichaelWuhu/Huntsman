@@ -4,19 +4,100 @@ import io
 import random
 import requests
 
+from hunt_logic import *
+
 
 async def send_card(ctx, embed):
-    
-    hunt_button = discord.ui.Button(label="HUNT", style=discord.ButtonStyle.secondary, emoji="⚔️")
-    view = discord.ui.View(timeout=60)
-    view.add_item(hunt_button)
 
-    async def callback(interaction):
+    # TODO: replace emojis with mh emojis
+    hunt_button = discord.ui.Button(label="HUNT", style=discord.ButtonStyle.secondary, emoji="⚔️") 
+    special_button = discord.ui.Button(label="SPECIAL", style=discord.ButtonStyle.primary, emoji="🔮")
+    item_button = discord.ui.Button(label="ITEM", style=discord.ButtonStyle.success, emoji="🍄")
+    view = discord.ui.View(timeout=120)
+    view.add_item(hunt_button)
+    view.add_item(special_button)
+    view.add_item(item_button)
+
+    old_embed = embed
+    # print(f"embeds: {ctx.embeds}")
+    hunter_hp_parts = old_embed.fields[1].value.split(':')
+    hunter_hp = int(hunter_hp_parts[1].strip())
+    # hunter_hp = 100
+
+    monster_hp_parts = old_embed.fields[2].value.split(':')
+    monster_hp = int(monster_hp_parts[1].strip())
+    # monster_hp = 2000
+
+    turn = int(old_embed.footer.text.split(' ')[1])
+
+    async def hunt_callback(interaction):
         await interaction.response.defer()
-        await interaction.channel.send(f'**{interaction.user.display_name}** pressed button')
+        await interaction.channel.send(f'**{interaction.user.display_name}** pressed hunt button')
+        hunted = await on_hunt(hunter_hp=hunter_hp, monster_hp=monster_hp, turn=turn)
+        print(f"hunted: {hunted}")
+        await edit_card(interaction.message, old_embed, hunted[0], hunted[1], hunted[2], hunted[3])
+        # return hunted
+        # await interaction.channel.send(f'{hunted}')
+        # hunt_button.disabled = True # TODO: not working
+
+    async def special_callback(interaction):
+        await interaction.response.defer()
+        await interaction.channel.send(f'**{interaction.user.display_name}** pressed special button')
+        special_button.disabled = True
+
+    async def item_callback(interaction):
+        await interaction.response.defer()
+        await interaction.channel.send(f'**{interaction.user.display_name}** pressed item button')
+        item_button.disabled = True # TODO: not working
     
-    hunt_button.callback = callback
+    hunt_button.callback = hunt_callback
+    special_button.callback = special_callback
+    item_button.callback = item_callback
+
     await ctx.send(embed=embed, view=view)
+
+
+async def edit_card(message, embed, hunter_hp, monster_hp, status, turn):
+    new_embed = create_embed(embed.title, status, hunter_hp, monster_hp, turn)
+    await message.edit(embed=new_embed)
+
+
+# create embed
+def create_embed(title, status, hunterHP, monsterHP, turn=1):
+    embed = discord.Embed(title=title, color=discord.Color.gold())
+    embed.add_field(name="", value=status, inline=False)
+    embed.add_field(name="Hunter HP", value=f'💚: {hunterHP}', inline=True)
+    embed.add_field(name="Monster HP", value=f'❤️: {monsterHP}', inline=True)
+    embed.set_image(url="attachment://image.png")
+    embed.set_footer(text=f"Turn {turn}")
+    return embed
+
+
+# resizes an image for consistent width
+def resize_image(image_url, base_width):
+    response = requests.get(image_url)
+    img = Image.open(io.BytesIO(response.content))
+
+    wpercent = base_width / float(img.size[0])
+    hsize = int((float(img.size[1]) * float(wpercent)))
+    img = img.resize((base_width, hsize), Image.LANCZOS)
+
+    img_byte_arr = io.BytesIO()
+    img.save(img_byte_arr, format="PNG")
+    img_byte_arr = img_byte_arr.getvalue()
+
+    return img_byte_arr
+
+
+
+
+
+
+
+
+
+
+
 
 # sends the info in a formatted card
 async def old_send_card(ctx, monster_name, monster_rank, image_url, image_width=200):
@@ -62,29 +143,3 @@ async def old_send_card(ctx, monster_name, monster_rank, image_url, image_width=
 
     message = await ctx.send(file=file, embed=embed, view=view)
     return message
-
-# create embed
-def create_embed(title, status, hunterHP, monsterHP, turn=1):
-    embed = discord.Embed(title=title, color=discord.Color.gold())
-    embed.add_field(name="", value=status, inline=False)
-    embed.add_field(name="Hunter HP", value=f'💚: {hunterHP}', inline=True)
-    embed.add_field(name="Monster HP", value=f'❤️: {monsterHP}', inline=True)
-    embed.set_image(url="attachment://image.png")
-    embed.set_footer(text=f"Turn {turn}")
-    return embed
-
-
-# resizes an image for consistent width
-def resize_image(image_url, base_width):
-    response = requests.get(image_url)
-    img = Image.open(io.BytesIO(response.content))
-
-    wpercent = base_width / float(img.size[0])
-    hsize = int((float(img.size[1]) * float(wpercent)))
-    img = img.resize((base_width, hsize), Image.LANCZOS)
-
-    img_byte_arr = io.BytesIO()
-    img.save(img_byte_arr, format="PNG")
-    img_byte_arr = img_byte_arr.getvalue()
-
-    return img_byte_arr
