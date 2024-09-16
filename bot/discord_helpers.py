@@ -6,7 +6,17 @@ import requests
 
 
 async def send_card(ctx, embed):
-    await ctx.send(embed=embed)
+    
+    hunt_button = discord.ui.Button(label="HUNT", style=discord.ButtonStyle.secondary, emoji="⚔️")
+    view = discord.ui.View(timeout=60)
+    view.add_item(hunt_button)
+
+    async def callback(interaction):
+        await interaction.response.defer()
+        await interaction.channel.send(f'**{interaction.user.display_name}** pressed button')
+    
+    hunt_button.callback = callback
+    await ctx.send(embed=embed, view=view)
 
 # sends the info in a formatted card
 async def old_send_card(ctx, monster_name, monster_rank, image_url, image_width=200):
