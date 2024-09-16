@@ -4,7 +4,9 @@ import json
 import discord
 import io
 from PIL import Image
+
 from discord_helpers import *
+from monsterInfo import *
 
 def setup_commands(bot):
     @bot.command()
@@ -28,7 +30,7 @@ def setup_commands(bot):
         # TODO: add in a low/high rank status (changes probability)
         res = requests.get(f"https://mhw-db.com/monsters/{id}")
         monsters = json.loads(res.text)
-        hunterRank = "low" # later change to below
+        rank = "low" # later change to below
     
 
         if can_roll:
@@ -40,5 +42,17 @@ def setup_commands(bot):
             embed.set_image(url="attachment://image.png")
             embed.set_footer(text=f"Turn {1}")
 
-            await send_card(ctx, embed=embed) 
+
+            image_url = getMonsterImage(monsters["name"])         
+            image_data = resize_image(image_url, 200)
+            file = discord.File(io.BytesIO(image_data), filename="image.png")
+            hunter_hp_value = 100
+            monster_name = monsters["name"]
+            monster_hp_value = getMonsterHP(monster_name, rank)
+            
+            # element = getMonsterElement(monster_name)
+            embed = create_embed(monster_name, "React to Hunt", hunter_hp_value, monster_hp_value)
+    
+
+            await send_card(ctx, file=file, embed=embed) 
             

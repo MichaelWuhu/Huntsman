@@ -7,7 +7,7 @@ import requests
 from hunt_logic import *
 
 
-async def send_card(ctx, embed):
+async def send_card(ctx, file, embed):
 
     # TODO: replace emojis with mh emojis
     hunt_button = discord.ui.Button(label="HUNT", style=discord.ButtonStyle.secondary, emoji="⚔️") 
@@ -54,7 +54,7 @@ async def send_card(ctx, embed):
     special_button.callback = special_callback
     item_button.callback = item_callback
 
-    await ctx.send(embed=embed, view=view)
+    await ctx.send(file=file, embed=embed, view=view)
 
 
 async def edit_card(message, embed, hunter_hp, monster_hp, status, turn):
