@@ -2,8 +2,8 @@ import random
 
 async def on_hunt(hunter_hp, monster_hp, turn=1):
     
-    print("hunter_hp: ", hunter_hp)
-    print("monster_hp: ", monster_hp)
+    # print("hunter_hp: ", hunter_hp)
+    # print("monster_hp: ", monster_hp)
 
     # Checks for can_hunt ###################
     if hunter_hp == 0:
@@ -22,29 +22,30 @@ async def on_hunt(hunter_hp, monster_hp, turn=1):
     # attack logic
     if random.randint(1, 100) <= 15: # dodge chance
         monster_dmg = 0
-        hunter_status += "\n& dodged monster"
+        hunter_status += f"\n& dodged monster"
     elif random.randint(1, 100) <= 5: # miss chance
         hunter_dmg = 0
         hunter_status = f"Missed attack & took {monster_dmg} from monster"
+    else:
+        hunter_status += f"\n& took {monster_dmg} damage from monster"
 
 
     new_hunter_hp = hunter_hp - monster_dmg
     new_monster_hp = monster_hp - hunter_dmg
     hunter_status = hunter_status
+
+    if new_monster_hp < 0:
+        new_monster_hp = 0
+        hunter_status = "monster slain"
+        monster_slain = True
+    if new_hunter_hp < 0:
+        new_hunter_hp = 0
+        if not monster_slain:
+            hunter_status = "fainted"
+
     turn = turn + 1
 
     return new_hunter_hp, new_monster_hp, hunter_status, turn
-
-    # if new_monster_hp <= 0 and new_hunter_hp <= 0:
-    #     return "hunted and fainted"
-    # elif new_monster_hp <= 0:
-    #     return "hunted"
-    # elif new_hunter_hp <= 0:
-    #     return "fainted"
-    # else:
-    #     return "N/A"
-
-
 
 # Simulates the hunting logic for sword and shield
 async def hunt_swordAndShield(hunter, monster, turn=1):
