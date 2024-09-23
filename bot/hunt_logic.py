@@ -15,6 +15,7 @@ async def on_hunt(hunter_hp, monster_hp, turn=1):
     hunter_dmg = 50 + 500
     monster_dmg = random.randint(20, 30)
     hunter_status = f"Dealt {hunter_dmg} damage to monster"
+    monster_slain = False
     
     # attack logic
     if random.randint(1, 100) <= 15: # dodge chance
