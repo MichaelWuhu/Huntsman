@@ -18,54 +18,35 @@ async def send_card(ctx, file, embed):
     view.add_item(special_button)
     view.add_item(potion_button)
 
-    # old_embed = embed
-    # # print(f"embeds: {ctx.embeds}")
-    # hunter_hp_parts = old_embed.fields[1].value.split(':')
-    # hunter_hp = int(hunter_hp_parts[1].strip())
-    # # hunter_hp = 100
-
-    # monster_hp_parts = old_embed.fields[2].value.split(':')
-    # monster_hp = int(monster_hp_parts[1].strip())
-    # # monster_hp = 2000
-
-    # turn = int(old_embed.footer.text.split(' ')[1])
-
     async def hunt_callback(interaction):
         await interaction.response.defer()
         embed = interaction.message.embeds[0]
         hunter_hp, monster_hp, turn = get_embed_values(embed)
         
-        # print("hunter_hp: ", hunter_hp)
-        # print("monster_hp: ", monster_hp)
-        # print("turn: ", turn)
-
-        # await interaction.channel.send(f'**{interaction.user.display_name}** pressed hunt button')
         hunt = await on_hunt(hunter_hp=hunter_hp, monster_hp=monster_hp, turn=turn)
         print(f"hunt: {hunt}")
         if hunt:
             await edit_card(interaction.message, embed, hunt[0], hunt[1], hunt[2], hunt[3])
 
-        # embed = interaction.message.embeds[0]
-        # hunter_hp, monster_hp, turn = get_embed_values(embed)
-
-        # if monster_hp == 0:
-            # await interaction.channel.send(f'**{interaction.user.display_name}** hunted the monster 🗡️')
-        # elif hunter_hp == 0:
-            # await interaction.channel.send(f'**{interaction.user.display_name}** fainted 💀')
-        
-        # return hunted
         # await interaction.channel.send(f'{hunted}')
         # hunt_button.disabled = True # TODO: not working
 
     async def special_callback(interaction):
         await interaction.response.defer()
-        await interaction.channel.send(f'**{interaction.user.display_name}** pressed special button')
-        special_button.disabled = True
+        embed = interaction.message.embeds[0]
+        hunter_hp, monster_hp, turn = get_embed_values(embed)
+
+        user_weapon = "swordAndShield" # TODO: get acutal weapon
+        hunt = await eval(f"hunt_{user_weapon} (hunter_hp={hunter_hp}, monster_hp={monster_hp}, turn={turn})")
+
+        print(f"hunt: {hunt}")
+        if hunt:
+            await edit_card(interaction.message, embed, hunt[0], hunt[1], hunt[2], hunt[3])
 
     async def potion_callback(interaction):
         await interaction.response.defer()
         await interaction.channel.send(f'**{interaction.user.display_name}** pressed item button')
-        potion_button.disabled = True # TODO: not working
+        # potion_button.disabled = True # TODO: not working
     
     hunt_button.callback = hunt_callback
     special_button.callback = special_callback
