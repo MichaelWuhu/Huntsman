@@ -37,17 +37,29 @@ async def send_card(ctx, file, embed):
         hunter_hp, monster_hp, turn = get_embed_values(embed)
 
         user_weapon = "swordAndShield" # TODO: get acutal weapon
-        hunt = await eval(f"hunt_{user_weapon} (hunter_hp={hunter_hp}, monster_hp={monster_hp}, turn={turn})")
+        special = await eval(f"hunt_{user_weapon} (hunter_hp={hunter_hp}, monster_hp={monster_hp}, turn={turn})")
 
-        print(f"hunt: {hunt}")
-        if hunt:
-            await edit_card(interaction.message, embed, hunt[0], hunt[1], hunt[2], hunt[3])
+        print(f"special: {special}")
+        if special:
+            await edit_card(interaction.message, embed, special[0], special[1], special[2], special[3])
 
     async def potion_callback(interaction):
         await interaction.response.defer()
-        await interaction.channel.send(f'**{interaction.user.display_name}** pressed item button')
+        embed = interaction.message.embeds[0]
+        hunter_hp, monster_hp, turn = get_embed_values(embed)
+        potion_count = 10 # TODO: get actual potion count
+
+        # await interaction.channel.send(f'**{interaction.user.display_name}** pressed item button')
         # potion_button.disabled = True # TODO: not working
+
+        potion = await on_potion(hunter_hp=hunter_hp, monster_hp=monster_hp, potion_count=potion_count, turn=turn)
+        print(f"potion: {potion}")
+        if potion:
+            await edit_card(interaction.message, embed, potion[0], potion[1], potion[2], potion[4])
+            # potion_count_in_db = potion[3] # TODO: update potion count in database
+            
     
+
     hunt_button.callback = hunt_callback
     special_button.callback = special_callback
     potion_button.callback = potion_callback

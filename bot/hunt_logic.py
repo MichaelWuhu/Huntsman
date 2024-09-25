@@ -45,6 +45,30 @@ async def on_hunt(hunter_hp, monster_hp, turn=1):
 
     return new_hunter_hp, new_monster_hp, hunter_status, turn
 
+async def on_potion(hunter_hp, monster_hp, potion_count, turn=1):
+    
+    # Checks for can_hunt ###################
+    if hunter_hp == 0:
+        print("hunter fainted")
+        return False
+    
+    # if monster_hp == 0:
+    #     print("monster slain")
+    #     return False
+    #########################################
+
+    hunter_status = f"Consumed potion, healed 50 hp"
+    new_hunter_hp = hunter_hp + 50
+
+    if new_hunter_hp >= 100:
+        new_hunter_hp = 100
+
+    turn = turn + 1
+
+    return new_hunter_hp, monster_hp, hunter_status, potion_count-1, turn
+
+
+
 # Simulates the hunting logic for sword and shield
 async def hunt_swordAndShield(hunter_hp, monster_hp, turn=1):
     
