@@ -6,7 +6,6 @@ import requests
 
 from hunt_logic import *
 
-
 async def send_card(ctx, file, embed):
 
     # TODO: replace emojis with mh emojis
@@ -17,6 +16,7 @@ async def send_card(ctx, file, embed):
     view.add_item(hunt_button)
     view.add_item(special_button)
     view.add_item(potion_button)
+    specialCount = 1
 
     async def hunt_callback(interaction):
         await interaction.response.defer()
@@ -32,15 +32,17 @@ async def send_card(ctx, file, embed):
         # hunt_button.disabled = True # TODO: not working
 
     async def special_callback(interaction):
+        nonlocal specialCount
         await interaction.response.defer()
         embed = interaction.message.embeds[0]
         hunter_hp, monster_hp, turn = get_embed_values(embed)
-
-        user_weapon = "swordAndShield" # TODO: get acutal weapon
-        special = await eval(f"hunt_{user_weapon} (hunter_hp={hunter_hp}, monster_hp={monster_hp}, turn={turn})")
+        
+        user_weapon = "greatsword" # TODO: get acutal weapon
+        special = await eval(f"hunt_{user_weapon} (hunter_hp={hunter_hp}, monster_hp={monster_hp}, turn={turn}, specialCount={specialCount})")
 
         print(f"special: {special}")
         if special:
+            specialCount += 1
             await edit_card(interaction.message, embed, special[0], special[1], special[2], special[3])
 
     async def potion_callback(interaction):

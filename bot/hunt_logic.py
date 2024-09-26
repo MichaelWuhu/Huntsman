@@ -69,8 +69,8 @@ async def on_potion(hunter_hp, monster_hp, potion_count, turn=1):
 
 
 
-# Simulates the hunting logic for sword and shield
-async def hunt_swordAndShield(hunter_hp, monster_hp, turn=1):
+# Hunt logic for sword and shield
+async def hunt_swordAndShield(hunter_hp, monster_hp, turn=1, specialCount=0):
     
     # Checks for can_hunt ###################
     if hunter_hp == 0:
@@ -88,8 +88,56 @@ async def hunt_swordAndShield(hunter_hp, monster_hp, turn=1):
     monster_slain = False
     
     # attack logic
-    monster_dmg = int(monster_dmg/2) # TODO: balance
-    hunter_status = f"Blocked monster taking less damage ({monster_dmg}) & dealth {hunter_dmg} to monster"
+    if specialCount % 3 == 0:
+        monster_dmg = 0
+        hunter_status = f"Stunned monster & dealt {hunter_dmg} to monster"
+    else:
+        monster_dmg = int(monster_dmg/2) # TODO: balance
+        hunter_status = f"Blocked monster taking less damage ({monster_dmg}) & dealt {hunter_dmg} to monster"
+
+    new_hunter_hp = hunter_hp - monster_dmg
+    new_monster_hp = monster_hp - hunter_dmg
+    hunter_status = hunter_status
+
+    if new_monster_hp <= 0:
+        new_monster_hp = 0
+        hunter_status = "monster slain"
+        monster_slain = True
+    if new_hunter_hp <= 0:
+        new_hunter_hp = 0
+        if not monster_slain:
+            hunter_status = "fainted"
+
+    turn = turn + 1
+
+    return new_hunter_hp, new_monster_hp, hunter_status, turn
+
+# Hunt logic for gs
+async def hunt_greatsword(hunter_hp, monster_hp, turn=1, specialCount=0):
+    
+    # Checks for can_hunt ###################
+    if hunter_hp == 0:
+        print("hunter fainted")
+        return False
+    
+    if monster_hp == 0:
+        print("monster slain")
+        return False
+    #########################################
+
+    hunter_dmg = 50 + 500 # this is wpn dmg ig
+    monster_dmg = random.randint(20, 30) # TODO: change to actual bounds
+    hunter_status = f"Dealt {hunter_dmg} damage to monster"
+    monster_slain = False
+    
+
+    if specialCount % 3 == 0:
+        hunter_dmg = hunter_dmg * 5 # tweak idk how this is gunna b
+        hunter_status = f"Dealt {hunter_dmg} damage to monster"
+    else:
+        hunter_dmg = 0
+        hunter_status = f"Charging attack "
+        hunter_status += f"\n& took {monster_dmg} damage from monster"
 
     new_hunter_hp = hunter_hp - monster_dmg
     new_monster_hp = monster_hp - hunter_dmg
